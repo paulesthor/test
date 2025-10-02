@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apéro Games - Choisissez votre jeu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+</head>
+<body id="page-lobby-main">
+    <div class="background-overlay"></div>
+
+    <header class="lobby-header">
+        <h1>Jeu de <span>Gitans</span></h1>
+        <p>Des jeux pour se retourner la caboche en tout bien tout honneur.</p>
+
+        <div class="auth-container">
+            <span id="user-info" class="hidden"></span>
+            <a href="profile.html" id="profile-btn" class="auth-btn hidden"><i class="fas fa-user-cog"></i> Profil</a>
+            <button id="login-btn" type="button" class="auth-btn">Connexion</button>
+            <button id="signup-btn" type="button" class="auth-btn">Inscription</button>
+            <button id="logout-btn" type="button" class="auth-btn hidden">Déconnexion</button>
+        </div>
+        
+    </header>
+
+    <main class="container">
+        <div class="game-selection-container">
+            <div class="game-card">
+                <div class="game-card-background" style="background-image: url('pyramide.png');"></div>
+                <div class="game-card-content">
+                    <div class="game-icon"><i class="fas fa-layer-group"></i></div>
+                    <h2>La Pyramide</h2>
+                    <p>Retournez des situations... et des cartes. Bluff, accusations et gorgées garanties.</p>
+                    <a href="lobbypyramide.html" class="btn-play"><span>Jouer</span><i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+            <div class="game-card coming-soon">
+                <div class="game-card-background" style="background-image: url('https://i.imgur.com/eF4Z3f3.jpeg');"></div>
+                <div class="game-card-content">
+                    <div class="game-icon"><i class="fas fa-dice"></i></div>
+                    <h2>Le Bizkit</h2>
+                    <p>Un jeu de dés simple et dévastateur où chaque chiffre a sa propre règle.</p>
+                    <a href="#" class="btn-play" disabled><span>Bientôt disponible</span><i class="fas fa-hourglass-half"></i></a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="lobby-footer">
+        <p>L'abus d'alcool est recommandé par les collègues. Écoutez-les avec grande attention.</p>
+    </footer>
+
+    <div id="auth-modal" class="modal hidden">
+        <div class="modal-content">
+            <button id="close-modal-btn" type="button" class="close-btn">&times;</button>
+            <h3 id="modal-title">Connexion</h3>
+            <div id="modal-error" class="message error hidden"></div>
+            <form id="auth-form">
+                <input type="text" id="username-input" name="username" placeholder="Pseudo" class="hidden" autocomplete="username">
+                <input type="email" id="email-input" name="email" placeholder="Email" required autocomplete="email">
+                <input type="password" id="password-input" name="password" placeholder="Mot de passe" required autocomplete="current-password">
+                <button type="submit" id="modal-action-btn" class="btn-play">Se connecter</button>
+            </form>
+            <div class="divider">OU</div>
+            <button type="button" id="google-signin-btn" class="google-btn"><i class="fab fa-google"></i> Se connecter avec Google</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>

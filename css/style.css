@@ -1,0 +1,310 @@
+/* =============================================== */
+/* ==   FEUILLE DE STYLE UNIQUE & CONSOLIDÉE    == */
+/* =============================================== */
+
+/* ----------------------------------------------- */
+/* == 1. VARIABLES GLOBALES ET RESET            == */
+/* ----------------------------------------------- */
+:root {
+    --primary-color: #e74c3c;
+    --secondary-color: #f39c12;
+    --background-dark: #2c3e50;
+    --background-light: #34495e;
+    --card-background: #ffffff;
+    --text-dark: #2c3e50;
+    --text-light: #ecf0f1;
+    --success-color: #2ecc71;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    --font-montserrat: 'Montserrat', sans-serif;
+    --font-playfair: 'Playfair Display', serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-montserrat); background-color: var(--background-dark); color: var(--text-light); min-height: 100vh; position: relative; overflow-x: hidden; }
+.background-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(45deg, #2c3e50, #34495e); z-index: -1; }
+.hidden { display: none !important; }
+
+/* ----------------------------------------------- */
+/* == 2. COMPOSANTS PARTAGÉS (Modals, Boutons...) == */
+/* ----------------------------------------------- */
+/* --- Modals --- */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 1000; opacity: 1; transition: opacity 0.3s ease;
+}
+.modal.hidden { opacity: 0; pointer-events: none; }
+.modal-content {
+    background-color: var(--background-light); padding: 25px;
+    border-radius: var(--border-radius); width: 90%; max-width: 400px;
+    text-align: center; position: relative;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+}
+.modal-content h3 { font-family: var(--font-playfair); color: var(--secondary-color); margin-bottom: 20px; font-size: 1.8em; }
+.modal .close-btn {
+    position: absolute; top: 10px; right: 15px; background: none; border: none;
+    color: white; font-size: 2rem; cursor: pointer;
+}
+
+/* --- Boutons --- */
+.btn-play, .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.75rem;
+    background-color: var(--primary-color); color: white; padding: 0.75rem 1.5rem;
+    border: none; border-radius: 50px; text-decoration: none; font-weight: 700;
+    cursor: pointer; transition: background-color 0.3s ease, transform 0.2s ease;
+}
+.btn-play:hover, .btn:hover { background-color: #c0392b; transform: scale(1.05); }
+
+/* --- Toast (Notifications) --- */
+.toast {
+    position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+    background-color: #333; color: white; padding: 12px 24px; border-radius: 30px;
+    z-index: 1000; opacity: 0; transition: all 0.4s ease;
+}
+.toast.show { opacity: 1; bottom: 20px; }
+.toast.error { background-color: var(--primary-color); }
+.toast.success { background-color: var(--success-color); }
+
+/* ----------------------------------------------- */
+/* == 3. PAGE D'ACCUEIL (index.html)            == */
+/* ----------------------------------------------- */
+#page-lobby-main { display: flex; flex-direction: column; align-items: center; padding: 2rem 1rem; }
+.lobby-header { text-align: center; margin-bottom: 3rem; }
+.lobby-header h1 { font-family: var(--font-playfair); font-size: clamp(2.5rem, 10vw, 4rem); letter-spacing: 1px; }
+.lobby-header h1 span { color: var(--secondary-color); }
+.lobby-header p { font-size: clamp(0.9rem, 3vw, 1.1rem); opacity: 0.8; margin-top: 0.5rem; }
+.auth-container { margin-top: 1.5rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;}
+.auth-btn, #profile-btn { background-color: transparent; border: 1px solid var(--secondary-color); color: var(--secondary-color); text-decoration: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; transition: all 0.3s; }
+.auth-btn:hover, #profile-btn:hover { background-color: var(--secondary-color); color: white; }
+#logout-btn { border-color: var(--primary-color); color: var(--primary-color); }
+#logout-btn:hover { background-color: var(--primary-color); color: white; }
+.game-selection-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; width: 100%; max-width: 1200px; }
+.game-card { position: relative; border-radius: var(--border-radius); overflow: hidden; box-shadow: var(--box-shadow); min-height: 400px; display: flex; flex-direction: column; justify-content: flex-end; transition: transform 0.3s ease; }
+.game-card:hover { transform: translateY(-10px); }
+.game-card-background { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; transition: transform 0.4s ease; }
+.game-card:hover .game-card-background { transform: scale(1.05); }
+.game-card-content { position: relative; z-index: 2; padding: 1.5rem; background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 20%, rgba(0, 0, 0, 0)); text-align: center; }
+.game-card.coming-soon { filter: grayscale(80%); }
+.game-card.coming-soon .btn-play { background-color: #7f8c8d; cursor: not-allowed; }
+.lobby-footer { margin-top: 3rem; font-size: 0.8rem; opacity: 0.6; text-align: center; }
+/* --- Modal d'authentification --- */
+#auth-modal #auth-form { display: flex; flex-direction: column; gap: 15px; }
+#auth-modal input { padding: 12px; border-radius: 5px; border: 1px solid var(--background-light); background-color: var(--background-light); color: var(--text-light); font-size: 1rem; }
+#auth-modal .divider { margin: 20px 0; color: #7f8c8d; font-weight: bold; }
+#auth-modal .google-btn { background-color: #fff; color: #2c3e50; border: none; width: 100%; padding: 12px; border-radius: 5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background-color 0.3s ease; }
+
+/* ----------------------------------------------- */
+/* == 4. LOBBY PYRAMIDE (lobbypyramide.html)    == */
+/* ----------------------------------------------- */
+#page-accueil .container { display: flex; flex-direction: column; justify-content: center; align-items: center; max-width: 600px; padding: 20px; margin: 0 auto; min-height: 100vh; }
+#page-accueil header { text-align: center; margin-bottom: 30px; }
+
+/* NOUVEAU STYLE pour l'icône de guitare au-dessus du titre */
+#page-accueil .header-icon {
+    font-size: 2.5em; /* Taille réduite pour l'icône */
+    color: var(--primary-color);
+    margin-bottom: 15px; /* Espace entre l'icône et le titre */
+    display: block; /* S'assure qu'il prend sa propre ligne */
+}
+
+#page-accueil h1 {
+    font-family: var(--font-playfair);
+    font-size: 3.2em; /* Légèrement réduit pour mieux s'adapter */
+    white-space: nowrap; /* Force le titre à rester sur une seule ligne */
+    margin: 0;
+    padding: 0;
+}
+#page-accueil h1 span { color: var(--secondary-color); }
+#page-accueil .subtitle {
+    font-size: 1rem;
+    margin-top: 10px;
+    font-style: italic;
+    opacity: 0.9;
+}
+
+#page-accueil .card { background-color: var(--card-background); color: var(--text-dark); padding: 30px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); width: 100%; max-width: 450px; text-align: center; }
+
+/* Styles pour le profil */
+.profile-setup { margin-bottom: 20px; }
+.profile-setup h2 {
+    color: var(--primary-color); /* Changement pour la couleur rouge */
+    margin-bottom: 25px;
+    font-family: var(--font-playfair); /* Utilise la police "titre" */
+    font-size: 2em; /* Taille légèrement augmentée */
+}
+.avatar-upload { margin-bottom: 20px; }
+.avatar-preview {
+    width: 100px; height: 100px; border-radius: 50%; background-color: #ecf0f1;
+    display: flex; justify-content: center; align-items: center; overflow: hidden;
+    margin: 0 auto 10px auto; border: 3px solid var(--primary-color); cursor: pointer;
+}
+.avatar-preview i { font-size: 3rem; color: #bdc3c7; }
+.avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-upload .hint { font-size: 0.8em; color: #7f8c8d; }
+
+#page-accueil .input-group { display: flex; align-items: center; border: 1px solid #ccc; border-radius: var(--border-radius); padding: 10px 15px; margin-bottom: 20px; }
+#page-accueil .input-group input { border: none; outline: none; flex-grow: 1; font-size: 1em; background: transparent; }
+#page-accueil .buttons { display: flex; flex-direction: column; gap: 15px; }
+#page-accueil .btn-create, #page-accueil .btn-join, #page-accueil .btn-confirm, #page-accueil .btn-secondary {
+    border-radius: var(--border-radius);
+    font-weight: bold;
+    width: 100%;
+    padding: 15px; /* Améliore l'espacement intérieur */
+    font-size: 1.1em; /* Rend le texte légèrement plus grand */
+    text-transform: uppercase; /* Met le texte en majuscules pour plus d'impact */
+}
+#page-accueil .btn-create { background-color: var(--primary-color); }
+#page-accueil .btn-join, #page-accueil .btn-confirm { background-color: var(--secondary-color); }
+#page-accueil .btn-secondary { background-color: #7f8c8d; }
+
+/* ----------------------------------------------- */
+/* == 5. SALON D'ATTENTE (join.html)            == */
+/* ----------------------------------------------- */
+#page-lobby .container { max-width: 600px; padding: 15px; margin: 0 auto; }
+#page-lobby .lobby-card { background-color: var(--card-background); color: var(--text-dark); padding: 20px 15px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); text-align: center; }
+#page-lobby .game-id-display { background-color: var(--primary-color); color: white; font-family: 'Courier New', monospace; font-size: 1.4rem; padding: 8px 15px; border-radius: var(--border-radius); display: inline-block; margin: 8px 0; }
+#page-lobby .players-list { background-color: #f8f9fa; border-radius: var(--border-radius); padding: 10px; max-height: 40vh; overflow-y: auto; }
+#page-lobby .player-item { display: flex; align-items: center; padding: 8px 10px; background-color: white; border-radius: var(--border-radius); margin-bottom: 8px; }
+#page-lobby .player-avatar { width: 36px; height: 36px; border-radius: 50%; margin-right: 10px; overflow: hidden; }
+#page-lobby .player-avatar img { width: 100%; height: 100%; object-fit: cover; }
+#page-lobby .player-name { font-weight: bold; flex-grow: 1; text-align: left; }
+#page-lobby .player-status { padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: bold; color: white; }
+#page-lobby .player-status.ready { background-color: var(--success-color); }
+#page-lobby .player-status.waiting { background-color: var(--secondary-color); }
+#page-lobby .btn { padding: 12px 15px; border-radius: var(--border-radius); font-weight: bold; width: 100%; }
+#page-lobby .btn-success { background-color: var(--success-color); color: white; }
+#page-lobby .btn-danger { background-color: var(--primary-color); color: white; }
+
+/* ----------------------------------------------- */
+/* == 6. PAGE DE JEU (game.html & game2.html)   == */
+/* ----------------------------------------------- */
+/* ----------------------------------------------- */
+/* == 6. PAGE DE JEU (game.html & game2.html)   == */
+/* ==      VERSION FINALE AVEC ALIGNEMENT CORRIGÉ == */
+/* ----------------------------------------------- */
+#page-jeu .container { max-width: 600px; margin: 0 auto; }
+#page-jeu .content { padding: 20px 15px; }
+
+/* --- EN-TÊTE (HEADER) --- */
+#page-jeu .mobile-header {
+    background-color: var(--primary-color); padding: 10px 15px; display: grid;
+    grid-template-columns: 1fr auto 1fr; align-items: center; position: sticky;
+    top: 0; z-index: 100; min-height: 55px;
+}
+#page-jeu .header-left { text-align: left; }
+#page-jeu .header-center { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+#page-jeu .header-right { text-align: right; }
+#page-jeu #header-player-avatar {
+    width: 32px; height: 32px; border-radius: 50%; background-color: var(--background-light); border: 2px solid white;
+    background-size: cover; background-position: center;
+}
+#page-jeu #header-player-name { font-size: 0.8em; font-weight: bold; margin-top: 2px; }
+#page-jeu .mobile-header button { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+#page-jeu .mobile-header .game-info { display: flex; gap: 15px; }
+
+#page-jeu .section-title {
+    color: var(--secondary-color); font-size: 1.2rem; margin-bottom: 20px;
+    text-align: center; font-weight: bold;
+}
+
+/* --- SECTION DES CARTES (Approche finale et robuste de l'ancien projet) --- */
+#page-jeu .player-cards-section, #page-jeu .pyramid-section {
+    width: 100%;
+}
+/* On utilise text-align: center sur les conteneurs directs des cartes */
+#page-jeu .pyramid-row, #page-jeu .player-hand-main {
+    text-align: center;   /* La méthode de centrage qui fonctionne */
+    width: 100%;
+    font-size: 0;         /* Astuce pour enlever l'espace fantôme */
+    margin-bottom: 8px;
+}
+#page-jeu .player-hand-main { min-height: 110px; }
+
+/* On fait en sorte que les cartes se comportent comme du texte */
+#page-jeu .pyramid-card {
+    display: inline-block;  /* Permet à la carte d'être centrée par text-align */
+    vertical-align: top;
+    margin: 0 4px;        /* Espacement horizontal */
+    font-size: 1rem;      /* Réinitialise la taille de police pour le contenu */
+    width: 70px;
+    height: 105px;
+    perspective: 1000px;
+    user-select: none;
+}
+
+#page-jeu .pyramid-card .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); border-radius: 6px; }
+#page-jeu .pyramid-card.revealed .card-inner { transform: rotateY(180deg); }
+
+#page-jeu .pyramid-card .card-front, #page-jeu .pyramid-card .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+#page-jeu .pyramid-card .card-back {
+    background-color: var(--primary-color); border: 3px solid white;
+    background-size: cover; background-position: center;
+}
+#page-jeu .pyramid-card .card-back:not([style*="background-image"])::before { content: 'P'; font-family: var(--font-playfair); font-size: 40px; color: white; opacity: 0.8; }
+#page-jeu .pyramid-card .card-front { background-color: #fdfdfd; color: var(--text-dark); transform: rotateY(180deg); position: relative; }
+#page-jeu .pyramid-card .card-front.red { color: #e74c3c; }
+#page-jeu .pyramid-card .card-front.black { color: #2c3e50; }
+
+#page-jeu .pyramid-card .corner { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1; }
+#page-jeu .pyramid-card .corner .value { font-size: 1.1rem; font-weight: bold; }
+#page-jeu .pyramid-card .corner .suit { font-size: 1rem; }
+#page-jeu .pyramid-card .corner.top-left { top: 5px; left: 7px; }
+#page-jeu .pyramid-card .corner.bottom-right { bottom: 5px; right: 7px; transform: rotate(180deg); }
+#page-jeu .pyramid-card .suit-center { font-size: 3rem; }
+
+#page-jeu .players-cards-display { display: flex; flex-direction: column; align-items: center; gap: 25px; margin-top: 20px; width: 100%; }
+#page-jeu .player-cards-group { width: 100%; display: flex; flex-direction: column; align-items: center; }
+#page-jeu .player-cards-group h3 { margin-bottom: 10px; font-size: 1.1em; color: var(--text-light); }
+
+/* --- Barre d'actions contextuelles --- */
+#page-jeu .contextual-actions, #page-jeu .dynamic-actions-container {
+    position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--background-light); padding: 15px;
+    border-radius: 12px 12px 0 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.3); z-index: 50;
+    max-width: 600px; margin: 0 auto; transform: translateY(100%); transition: transform 0.3s ease-in-out;
+}
+#page-jeu .contextual-actions.visible, #page-jeu .dynamic-actions-container:not(.hidden) { transform: translateY(0); }
+#page-jeu .action-title, #page-jeu .action-prompt { text-align: center; margin-bottom: 15px; font-weight: bold; color: var(--secondary-color); }
+#page-jeu .dynamic-buttons, #page-jeu .action-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+#page-jeu .contextual-actions button, #page-jeu .action-button { padding: 12px; border: none; border-radius: var(--border-radius); font-weight: bold; cursor: pointer; color: white; }
+#page-jeu .give-button, #page-jeu .liar-button { background-color: var(--primary-color); }
+#page-jeu .pass-button { background-color: #7f8c8d; }
+#page-jeu .drink-button { background-color: #3498db; }
+
+/* --- Sidebar et Chat --- */
+#page-jeu .mobile-sidebar { position: fixed; top: 0; right: -300px; width: 280px; height: 100%; background-color: var(--background-light); z-index: 200; transition: right 0.3s ease-in-out; padding: 15px; display: flex; flex-direction: column; }
+#page-jeu .mobile-sidebar.open { right: 0; }
+#page-jeu .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--background-dark); padding-bottom: 10px; }
+#page-jeu .sidebar-header .close-btn { font-size: 1.5rem; }
+#page-jeu .players-list-sidebar h4, #page-jeu .chat-container h4 { margin-bottom: 10px; color: var(--secondary-color); }
+#page-jeu #players-container .player-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 5px; margin-bottom: 5px; }
+#page-jeu #players-container .player-item.player-current { background-color: rgba(243, 156, 18, 0.2); }
+#page-jeu #players-container .player-avatar { width: 30px; height: 30px; border-radius: 50%; overflow: hidden; }
+#page-jeu #players-container .player-avatar img { width: 100%; height: 100%; object-fit: cover; }
+#page-jeu #players-container .sips-badge { background-color: var(--primary-color); padding: 2px 6px; font-size: 0.8rem; border-radius: 5px; }
+#page-jeu .chat-container { display: flex; flex-direction: column; flex-grow: 1; margin-top: 20px; }
+#page-jeu .chat-messages { flex-grow: 1; background-color: var(--background-dark); border-radius: var(--border-radius); padding: 10px; overflow-y: auto; margin-bottom: 10px; }
+#page-jeu .chat-input-area { display: flex; gap: 5px; }
+#page-jeu #chat-input-mobile { flex-grow: 1; border: none; border-radius: var(--border-radius); padding: 8px; }
+#page-jeu #send-chat-mobile { border: none; background-color: var(--primary-color); color: white; padding: 0 12px; border-radius: var(--border-radius); }
+#page-jeu .leave-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px; border-radius: var(--border-radius); margin-top: 15px; teat-align: center; cursor: pointer; }
+#page-jeu .target-options { display: flex; flex-direction: column; gap: 10px; }
+#page-jeu .target-btn { padding: 12px; background-color: var(--secondary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+/* ----------------------------------------------- */
+/* == 7. PAGE PROFIL (profile.html)             == */
+/* ----------------------------------------------- */
+#page-profil .container { max-width: 600px; margin: 2rem auto; }
+#page-profil .lobby-header { text-align: center; position: relative; margin-bottom: 2rem; padding: 1rem 0; color: var(--text-light); }
+#page-profil .back-link { position: absolute; top: 20px; left: 20px; color: var(--text-light); text-decoration: none; font-size: 0.9rem; }
+.profile-container.card { background-color: var(--card-background); color: var(--text-dark); padding: 25px; border-radius: var(--border-radius); text-align: center; display: flex; flex-direction: column; gap: 2rem; }
+.details-section .input-group { text-align: left; margin-bottom: 15px; }
+.details-section label { display: block; margin-bottom: 5px; font-weight: bold; color: #7f8c8d; }
+.details-section input, .readonly-field { width: 100%; padding: 12px; border-radius: 5px; border: 1px solid #ccc; font-size: 1rem; }
+.readonly-field { background-color: #ecf0f1; color: #7f8c8d; cursor: not-allowed; }
+.stats-section { padding-top: 20px; border-top: 1px solid #ecf0f1; }
+.stats-hint { color: #7f8c8d; font-style: italic; margin-bottom: 20px; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; }
+.stat-item { background-color: #f8f9fa; padding: 15px; border-radius: var(--border-radius); }
+.stat-value { display: block; font-size: 2rem; font-weight: bold; color: var(--primary-color); }
+.stat-label { font-size: 0.8rem; color: #7f8c8d; }
+.message.success { margin-top: 15px; background-color: var(--success-color); color: white; padding: 10px; border-radius: 5px; }

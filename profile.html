@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Profil - Apéro Games</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+</head>
+<body id="page-profil">
+    <div class="background-overlay"></div>
+
+    <header class="lobby-header">
+        <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Retour à l'accueil</a>
+        <h1>Mon <span>Profil</span></h1>
+    </header>
+
+    <main class="container">
+        <div class="profile-container card">
+            
+            <div class="details-section">
+                <h3><i class="fas fa-id-card"></i> Mes informations</h3>
+                <div class="input-group">
+                    <label for="username-input">Pseudo</label>
+                    <input type="text" id="username-input" placeholder="Votre pseudo" maxlength="15">
+                </div>
+                <div class="input-group">
+                    <label>Email</label>
+                    <p id="email-display" class="readonly-field">Chargement...</p>
+                </div>
+                 <div class="input-group">
+                    <label>Membre depuis</label>
+                    <p id="creation-date" class="readonly-field">Chargement...</p>
+                </div>
+
+                <button id="save-profile-btn" class="btn-play">
+                    <i class="fas fa-save"></i> Enregistrer le pseudo
+                </button>
+                <div id="success-message" class="message success hidden">Pseudo mis à jour !</div>
+            </div>
+
+            <div class="stats-section">
+                <h2>Mes <span>Statistiques</span></h2>
+                <p class="stats-hint">Les statistiques seront bientôt disponibles !</p>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-parties">0</span>
+                        <span class="stat-label">Parties Jouées</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-gorgees">0</span>
+                        <span class="stat-label">Gorgées Données</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-mensonges">0</span>
+                        <span class="stat-label">Bluffs Réussis</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/profile.js"></script>
+</body>
+</html>
