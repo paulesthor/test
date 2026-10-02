@@ -12,8 +12,8 @@ ni dérivée ; les valeurs supprimées (`x`) ou indisponibles (`..`) restent vid
 > = 770 obtenues ; provinces, volets et groupes CNP des EIMT tous reconnus).
 >
 > Règle : uniquement des techniques vues en cours (sections, `LOAD ... FROM`, `as`,
-> `RESIDENT`, `DROP TABLE`, `INLINE`, `MAPPING`, `Hash128`, `SET`/`LET`) ou très
-> proches (`Trim`, `Left`, `Mid`, `Index`, `Len`, `If`).
+> `RESIDENT`, `DROP TABLE`, `INLINE`, `MAPPING`, `SET`/`LET`) ou très proches
+> (`Concatenate`, `Trim`, `Left`, `Mid`, `Index`, `Len`, `Replace`, `If`).
 
 ## 1. Mise en place dans Qlik
 
@@ -23,7 +23,7 @@ ni dérivée ; les valeurs supprimées (`x`) ou indisponibles (`..`) restent vid
    les envoyer via « Fichiers et autres sources ».
 3. Utiliser l'assistant de sélection de fichier une fois pour lire le chemin exact
    (`lib://...`) et le mettre dans `vLib`.
-4. Créer une section par partie du script (Référentiels, EPA, EIMT, Modèle).
+4. Créer une section par partie du script (Provinces, Correspondances, EPA, EIMT).
    Garder les `SET` par défaut de la section Main.
 5. **EPA** : générer le `LOAD` avec l'assistant (comme dans le TP2) et adapter le
    bloc du script. Vérifier dans l'aperçu que les valeurs sont bien des nombres ;
@@ -40,30 +40,28 @@ Si Qlik nomme les champs des EIMT autrement que `A` à `H`, adapter le bloc.
 ## 2. Modèle de données
 
 ```
-Provinces ── Lien ── Groupes
-              │
-      ┌───────┴───────┐
- Faits_EPA        Faits_EIMT
+Provinces ── Faits
 ```
 
 | Table | Rôle | Champs principaux |
 |---|---|---|
-| Lien | une ligne par Année × Province × GroupeCNP | `%Cle` (Hash128), `Annee`, `Province`, `GroupeCNP` |
-| Faits_EPA | emploi, chômage, temps plein/partiel... | `%Cle`, `Indicateur`, `Unite`, `Valeur`, `Statut`, `Disponible` |
-| Faits_EIMT | un enregistrement par employeur × profession × trimestre | `%Cle`, `Trimestre`, `AnneeTrimestre`, `Volet`, `Employeur`, `Adresse`, `CNP5`, `Profession`, `EIMTApprouvees`, `PostesApprouves` |
-| Provinces | référentiel | `Province`, `CodeProvince`, `TypeProvince`, `Capitale`, `Pays` |
-| Groupes | les 10 grands groupes + le total | `GroupeCNP` |
+| Faits | EPA et EIMT dans la même table (`Concatenate`) | `Annee`, `Province`, `GroupeCNP` (communs) ; EPA : `Indicateur`, `Unite`, `Valeur`, `Statut`, `Disponible` ; EIMT : `Trimestre`, `AnneeTrimestre`, `Volet`, `Employeur`, `Adresse`, `CNP5`, `Profession`, `EIMTApprouvees`, `PostesApprouves` |
+| Provinces | référentiel (`provinces.csv`) | `Province`, `CodeProvince`, `TypeProvince`, `Capitale`, `Pays` |
 
-Choix : un seul niveau de profession (10 grands groupes) pour éviter les doubles
-comptages ; genre « Total » seulement ; la ligne « Canada » n'est pas chargée ;
-le statut juridique des employeurs n'est pas chargé (inconnu dans 81 % des cas).
+Choix : un seul niveau de profession (10 grands groupes + le total EPA) pour éviter
+les doubles comptages ; genre « Total » seulement ; la ligne « Canada » n'est pas
+chargée ; le statut juridique des employeurs n'est pas chargé (inconnu dans 81 % des cas).
+
+Conséquence d'une table unique : choisir un filtre propre aux EIMT (Volet,
+Trimestre) masquerait les lignes EPA. C'est pour ça que les mesures EPA ignorent ces
+champs avec la variable `vIgnEIMT`.
 
 ## 3. Contrôles après le premier chargement
 
-- Aucune clé synthétique (`$Syn`) dans l'aperçu du modèle.
+- Aucune clé synthétique (`$Syn`) dans l'aperçu du modèle : seulement deux tables, `Provinces` et `Faits`.
 - Un tableau `Province` : aucune province inattendue (une valeur mal corrigée se voit tout de suite).
 - Un tableau `AnneeTrimestre` : une période par fichier EIMT chargé, sans doublon.
-- Un tableau `GroupeCNP` : 10 groupes + le total, aucun « Autre ».
+- Un tableau `GroupeCNP` : 10 groupes + le total (EPA), aucun « Autre ».
 
 ## 4. Variables (cours « variables et set analysis »)
 
