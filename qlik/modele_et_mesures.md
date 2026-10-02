@@ -6,7 +6,7 @@ Règle de traitement : seuls les **formats** sont corrigés (espaces, accents pe
 lignes de notes, code collé au libellé). Aucune valeur n'est inventée, estimée
 ni dérivée ; les valeurs supprimées (`x`) ou indisponibles (`..`) restent vides.
 
-> Le script `chargement_projet.qvs` n'a pas pu être exécuté dans Qlik depuis cet
+> Le script `chargement_complet.qvs` n'a pas pu être exécuté dans Qlik depuis cet
 > environnement : sa syntaxe est à tester dans l'éditeur. La logique de
 > transformation a été vérifiée sur les fichiers fournis (770 lignes EPA attendues
 > = 770 obtenues ; provinces, volets et groupes CNP des EIMT tous reconnus).

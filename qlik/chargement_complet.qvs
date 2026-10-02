@@ -1,0 +1,128 @@
+// ===== Section Main (garder les SET par défaut, ajouter à la suite) =====
+SET vLib = 'lib://BUT3/Projet';
+SET vIgnEIMT = 'Volet=, Trimestre=, AnneeTrimestre=, Employeur=, CNP5=, Profession=';
+LET vDerniereMaj = Timestamp(Now(), 'DD MMM YYYY à hh:mm:ss');
+
+
+// ===== Section Provinces =====
+Provinces:
+LOAD
+    code as CodeProvince,
+    libelle as Province,
+    type as TypeProvince,
+    capitale as Capitale,
+    'Canada' as Pays
+FROM [$(vLib)/provinces.csv]
+(txt, utf8, embedded labels, delimiter is ';', msq);
+
+
+// ===== Section Correspondances =====
+// Accents perdus dans le fichier des EIMT
+Map_Province:
+MAPPING LOAD * INLINE [
+Brut;Propre
+Qu bec;Québec
+Nouvelle- cosse;Nouvelle-Écosse
+le-du-Prince- douard;Île-du-Prince-Édouard
+Territoires-du-Nord-Ouest;Territoires du Nord-Ouest
+](delimiter is ';');
+
+// EPA : code entre crochets -> grand groupe de professions
+Map_GroupeEPA:
+MAPPING LOAD * INLINE [
+Code;Groupe
+00, 10, 20, 30, 40, 50, 60, 70, 80, 90];Gestion
+11-14];Affaires, finance et administration
+21-22];Sciences naturelles et appliquées
+31-33];Santé
+41-45];Enseignement, droit et services sociaux
+51-55];Arts, culture et sports
+62-65];Vente et services
+72-75];Métiers, transport et machinerie
+82-85];Ressources naturelles et agriculture
+92-95];Fabrication et utilités publiques
+00-95];Total (toutes professions)
+](delimiter is ';');
+
+// EIMT : 1er chiffre du code CNP (précédé de C) -> grand groupe (gestion traitée à part)
+Map_GroupeCNP:
+MAPPING LOAD * INLINE [
+Code;Groupe
+C1;Affaires, finance et administration
+C2;Sciences naturelles et appliquées
+C3;Santé
+C4;Enseignement, droit et services sociaux
+C5;Arts, culture et sports
+C6;Vente et services
+C7;Métiers, transport et machinerie
+C8;Ressources naturelles et agriculture
+C9;Fabrication et utilités publiques
+](delimiter is ';');
+
+
+// ===== Section EPA =====
+// Colonnes lues par position : @1 année, @2 province, @4 indicateur,
+// @5 profession, @6 genre, @7 unité, @13 valeur, @14 statut
+EPA_brut:
+LOAD
+    Num(Left(@1, 4)) as Annee,
+    Trim(@2) as Province,
+    ApplyMap('Map_GroupeEPA', Mid(@5, Index(@5, '[') + 1), 'Autre') as GroupeCNP,
+    Trim(@4) as Indicateur,
+    Trim(@7) as Unite,
+    @13 as Valeur,
+    Trim(@14) as Statut
+FROM [$(vLib)/population.csv]
+(txt, utf8, no labels, delimiter is ',', msq)
+WHERE Num(Left(@1, 4)) >= 2019 AND Trim(@6) = 'Total - Genre' AND Trim(@2) <> 'Canada';
+
+// On garde les grands groupes seulement. Valeur vide = donnée absente (on ne la remplace pas)
+Faits:
+LOAD
+    Annee, Province, GroupeCNP, Indicateur, Unite, Valeur, Statut,
+    If(IsNull(Valeur), 0, 1) as Disponible
+RESIDENT EPA_brut
+WHERE GroupeCNP <> 'Autre';
+
+DROP TABLE EPA_brut;
+
+
+// ===== Section EIMT =====
+// Un bloc par fichier trimestriel : changer le nom du fichier, l'année et le trimestre
+EIMT_brut:
+LOAD
+    2025 as Annee,
+    'T1' as Trimestre,
+    A as ProvinceBrute,
+    B as VoletBrut,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [$(vLib)/tfwp_2026q1_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is Sheet1)
+WHERE Len(Trim(B)) > 0;
+
+// ... même bloc pour les autres trimestres ...
+
+// Mise en forme, puis ajout à la table Faits
+Concatenate (Faits)
+LOAD
+    Annee,
+    Trimestre,
+    Annee & '-' & Trimestre as AnneeTrimestre,
+    If(Left(Trim(ProvinceBrute), 3) = 'Les', 'Hors Canada (siège social)',
+       ApplyMap('Map_Province', Trim(ProvinceBrute), Trim(ProvinceBrute))) as Province,
+    If(Mid(ProfessionBrute, 2, 1) = '0', 'Gestion',
+       ApplyMap('Map_GroupeCNP', 'C' & Left(ProfessionBrute, 1))) as GroupeCNP,
+    Replace(Trim(VoletBrut), 'R sident', 'Résident') as Volet,
+    Trim(Employeur) as Employeur,
+    Adresse,
+    Left(ProfessionBrute, 5) as CNP5,
+    Mid(ProfessionBrute, 7) as Profession,
+    EIMTApprouvees,
+    PostesApprouves
+RESIDENT EIMT_brut;
+
+DROP TABLE EIMT_brut;
