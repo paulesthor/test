@@ -1,7 +1,5 @@
-// ===== Main =====
 SET vLib = 'lib://BUT3/Projet';
 
-// ===== Provinces =====
 Provinces:
 LOAD
     code as CodeProvince,
@@ -11,7 +9,6 @@ LOAD
 FROM [$(vLib)/provinces.csv]
 (txt, utf8, embedded labels, delimiter is ';', msq);
 
-// ===== EPA =====
 EPA:
 LOAD
     @1 as Annee,
@@ -24,7 +21,6 @@ LOAD
 FROM [$(vLib)/population.csv]
 (txt, utf8, no labels, delimiter is ',', msq);
 
-// ===== EIMT (un seul fichier pour commencer) =====
 EIMT:
 LOAD
     A as ProvinceBrute,
