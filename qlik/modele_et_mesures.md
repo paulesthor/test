@@ -7,9 +7,13 @@ lignes de notes, code collé au libellé). Aucune valeur n'est inventée, estim�
 ni dérivée ; les valeurs supprimées (`x`) ou indisponibles (`..`) restent vides.
 
 > Le script `chargement_projet.qvs` n'a pas pu être exécuté dans Qlik depuis cet
-> environnement. Sa logique de transformation a été vérifiée sur les fichiers
-> fournis (770 lignes EPA attendues = 770 obtenues, 100 % des provinces, volets et
-> groupes CNP reconnus côté EIMT), mais la syntaxe est à tester dans l'éditeur.
+> environnement : sa syntaxe est à tester dans l'éditeur. La logique de
+> transformation a été vérifiée sur les fichiers fournis (770 lignes EPA attendues
+> = 770 obtenues ; provinces, volets et groupes CNP des EIMT tous reconnus).
+>
+> Règle : uniquement des techniques vues en cours (sections, `LOAD ... FROM`, `as`,
+> `RESIDENT`, `DROP TABLE`, `INLINE`, `MAPPING`, `Hash128`, `SET`/`LET`) ou très
+> proches (`Trim`, `Left`, `Mid`, `Index`, `Len`, `If`).
 
 ## 1. Mise en place dans Qlik
 
@@ -19,13 +23,19 @@ ni dérivée ; les valeurs supprimées (`x`) ou indisponibles (`..`) restent vid
    les envoyer via « Fichiers et autres sources ».
 3. Utiliser l'assistant de sélection de fichier une fois pour lire le chemin exact
    (`lib://...`) et le mettre dans `vLib`.
-4. Créer une section par onglet du script (Référentiels, EPA, EIMT, Modèle), comme
-   dans le cours. Garder les `SET` par défaut de la section Main.
-5. Adapter `vFichierEPA` et `vSepEPA` (voir les premières lignes du CSV).
+4. Créer une section par partie du script (Référentiels, EPA, EIMT, Modèle).
+   Garder les `SET` par défaut de la section Main.
+5. **EPA** : générer le `LOAD` avec l'assistant (comme dans le TP2) et adapter le
+   bloc du script. Vérifier dans l'aperçu que les valeurs sont bien des nombres ;
+   sinon le séparateur décimal de la section Main ne correspond pas au fichier.
+6. **EIMT** : un bloc `LOAD` par fichier trimestriel. Copier le bloc et changer
+   le nom du fichier, l'année et le trimestre (à lire dans le titre de chaque
+   fichier). Sur le fichier fourni, le nom dit 2026 T1 mais le titre dit
+   janvier à mars 2025 : à trancher.
+7. Créer la variable `vAnneeMaxEPA` dans l'éditeur de variables, avec le signe `=`
+   (comme `=Today()` dans le cours) : `=Max({1<Indicateur={'Emploi'}>} Annee)`.
 
-Si le fichier EPA est un `.xlsx` et non un `.csv`, remplacer `@1`, `@2`... par
-`A`, `B`... et le format `(txt, ...)` par `(ooxml, no labels, table is Feuil1)`.
-Si Qlik nomme les champs des EIMT autrement que `A` à `H`, adapter de même.
+Si Qlik nomme les champs des EIMT autrement que `A` à `H`, adapter le bloc.
 
 ## 2. Modèle de données
 
@@ -43,7 +53,6 @@ Provinces ── Lien ── Groupes
 | Faits_EIMT | un enregistrement par employeur × profession × trimestre | `%Cle`, `Trimestre`, `AnneeTrimestre`, `Volet`, `Employeur`, `Adresse`, `CNP5`, `Profession`, `EIMTApprouvees`, `PostesApprouves` |
 | Provinces | référentiel | `Province`, `CodeProvince`, `TypeProvince`, `Capitale`, `Pays` |
 | Groupes | les 10 grands groupes + le total | `GroupeCNP` |
-| Controle_Fichiers | table isolée de contrôle | `CtrlFichier`, `CtrlAnneeTitre`, `CtrlTrimTitre`, `CtrlAnneeNom`, `CtrlTrimNom` |
 
 Choix : un seul niveau de profession (10 grands groupes) pour éviter les doubles
 comptages ; genre « Total » seulement ; la ligne « Canada » n'est pas chargée ;
@@ -52,20 +61,18 @@ le statut juridique des employeurs n'est pas chargé (inconnu dans 81 % des cas)
 ## 3. Contrôles après le premier chargement
 
 - Aucune clé synthétique (`$Syn`) dans l'aperçu du modèle.
-- `Controle_Fichiers` : pour chaque fichier, l'année du **titre** et celle du **nom**
-  doivent concorder. Sur le fichier fourni, le nom dit 2026 T1 et le titre dit
-  janvier à mars 2025 : à trancher (le script utilise le titre).
-- Tableau `Province` × nombre de lignes : aucune valeur `-` (province non reconnue).
-- Tableau `AnneeTrimestre` : une période par fichier EIMT chargé, sans doublon.
+- Un tableau `Province` : aucune province inattendue (une valeur mal corrigée se voit tout de suite).
+- Un tableau `AnneeTrimestre` : une période par fichier EIMT chargé, sans doublon.
+- Un tableau `GroupeCNP` : 10 groupes + le total, aucun « Autre ».
 
 ## 4. Variables (cours « variables et set analysis »)
 
-| Variable | Type | Contenu |
+| Variable | Où | Contenu |
 |---|---|---|
-| `vAnneeMin` | SET | première année EPA chargée |
-| `vDerniereMaj` | LET | date de dernier chargement, pour le titre de la page 1 |
-| `vAnneeMaxEPA` | LET | dernière année avec EPA, calculée au chargement |
-| `vIgnEIMT` | SET | liste de champs EIMT dont on ignore la sélection |
+| `vLib` | script, `SET` | chemin de la connexion et du dossier |
+| `vIgnEIMT` | script, `SET` | liste de champs EIMT dont on ignore la sélection |
+| `vDerniereMaj` | script, `LET` | date du dernier chargement, pour le titre de la page 1 |
+| `vAnneeMaxEPA` | éditeur de variables, avec `=` | dernière année avec EPA |
 
 ## 5. Hiérarchies à créer (Éléments principaux > Dimensions > Hiérarchique)
 
@@ -122,8 +129,7 @@ professions. Treemap : postes par groupe puis profession (hiérarchie Profession
 Texte et Image : lecture des résultats et prudence sur la causalité.
 
 **4. Qualité des données**
-Carte de chaleur Province × Indicateur de la complétude (EPA). Tableau
-`Controle_Fichiers`. Texte et Image : ce qui est corrigé (formats) et ce qui ne l'est
+Carte de chaleur Province × Indicateur de la complétude (EPA). Texte et Image : ce qui est corrigé (formats) et ce qui ne l'est
 pas (valeurs absentes, volontairement non remplacées).
 
 **5. Conclusion**

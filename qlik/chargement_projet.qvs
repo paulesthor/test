@@ -1,35 +1,27 @@
-///$tab MAIN
 // ============================================================================
 // PROJET DATAVIZ - "Où et pourquoi le Canada fait-il appel aux travailleurs
 // étrangers temporaires (TET) ?"
 //
-// REGLE DU PROJET : on corrige uniquement les FORMATS (espaces, accents perdus,
-// lignes de notes, code collé au libellé). Aucune valeur n'est inventée,
-// estimée ni dérivée : les valeurs absentes (x, ..) restent NULL.
+// Techniques utilisées, toutes vues en cours : sections, LOAD ... FROM, "as",
+// étiquette de table, RESIDENT, DROP TABLE, INLINE, MAPPING/ApplyMap,
+// Hash128 (clé composite), SET / LET, If, opérateur &.
+// Fonctions de texte très proches de Year()/Month() : Trim, Left, Mid, Index, Len.
 //
-// A FAIRE : garder les lignes SET générées par défaut dans la section Main
-// (ThousandSep, DecimalSep, DateFormat...) et AJOUTER le bloc ci-dessous.
-// Les chiffres sont lus de façon robuste (virgule ou point décimal).
+// REGLE : on ne corrige que les FORMATS (espaces, accents perdus, lignes de
+// notes, code collé au libellé). Aucune valeur n'est inventée ni calculée :
+// les valeurs absentes restent vides (NULL).
 // ============================================================================
 
-// ---- 1. Paramètres à adapter ------------------------------------------------
-SET vLib          = 'lib://BUT3/Projet';   // connexion + dossier (voir l'assistant "Fichiers et autres sources")
-SET vFichierEPA   = 'population.csv';      // nom du fichier EPA complet (CSV)
-SET vSepEPA       = ',';                   // séparateur du CSV EPA : ',' ou ';'
-SET vFichiersEIMT = 'tfwp_*_pos_fr.xlsx';  // motif des fichiers EIMT (un par trimestre)
-SET vAnneeMin     = 2019;                  // première année EPA chargée (recul avant 2021)
 
-// Utilisé dans les mesures : ignore les sélections faites sur les champs propres
-// aux EIMT quand on lit les données EPA (voir modele_et_mesures.md)
+// ===== SECTION Main (garder les SET par défaut, ajouter ceci à la suite) =====
+SET vLib = 'lib://BUT3/Projet';      // à remplacer par le chemin donné par l'assistant
+
+// Variables : SET = texte tel quel ; LET = résultat de la fonction au chargement
 SET vIgnEIMT = 'Volet=, Trimestre=, AnneeTrimestre=, Employeur=, CNP5=, Profession=';
-
-// LET évalue la fonction au chargement (contrairement à SET)
 LET vDerniereMaj = Timestamp(Now(), 'DD MMM YYYY à hh:mm:ss');
 
 
-///$tab Référentiels
-// ---- Provinces (provinces.csv) ----------------------------------------------
-// Pays = 'Canada' sert à lever les ambiguïtés de géolocalisation sur la carte
+// ===== SECTION Référentiels =====
 Provinces:
 LOAD
     code     as CodeProvince,
@@ -40,204 +32,220 @@ LOAD
 FROM [$(vLib)/provinces.csv]
 (txt, utf8, embedded labels, delimiter is ';', msq);
 
-// Les EIMT contiennent des employeurs étrangers sans province canadienne
+// Employeurs étrangers présents dans les EIMT (pas de province canadienne)
 Concatenate (Provinces)
 LOAD * INLINE [
-CodeProvince|Province|TypeProvince|Capitale|Pays
-HC|Hors Canada (siège social)|Autre|n.d.|Hors Canada
-] (delimiter is '|');
+CodeProvince;Province;TypeProvince;Capitale;Pays
+HC;Hors Canada (siège social);Autre;n.d.;Hors Canada
+](delimiter is ';');
 
-// ---- Correspondance profession EPA (code entre crochets) -> grand groupe ----
-// Les codes plus fins (sous-groupes) ne sont pas listés : ils sont ignorés
-// pour n'avoir qu'un seul niveau hiérarchique (évite les doubles comptages)
+// Accents perdus dans le fichier EIMT : l'espace remplace le caractère accentué.
+// Les noms déjà corrects ne sont pas touchés (valeur par défaut dans ApplyMap).
+Map_Province:
+MAPPING LOAD * INLINE [
+Brut;Propre
+Qu bec;Québec
+Nouvelle- cosse;Nouvelle-Écosse
+le-du-Prince- douard;Île-du-Prince-Édouard
+Territoires-du-Nord-Ouest;Territoires du Nord-Ouest
+](delimiter is ';');
+
+Map_Volet:
+MAPPING LOAD * INLINE [
+Brut;Propre
+R sident Permanent seulement;Résident permanent seulement
+](delimiter is ';');
+
+// EPA : code entre crochets (jusqu'au "]") -> grand groupe de professions
+// Les sous-groupes ne sont pas listés : un seul niveau, pas de double comptage
 Map_GroupeEPA:
 MAPPING LOAD * INLINE [
-CodeEPA|Groupe
-00, 10, 20, 30, 40, 50, 60, 70, 80, 90|Gestion
-11-14|Affaires, finance et administration
-21-22|Sciences naturelles et appliquées
-31-33|Santé
-41-45|Enseignement, droit et services sociaux
-51-55|Arts, culture et sports
-62-65|Vente et services
-72-75|Métiers, transport et machinerie
-82-85|Ressources naturelles et agriculture
-92-95|Fabrication et utilités publiques
-00-95|Total (toutes professions)
-] (delimiter is '|');
+Code;Groupe
+00, 10, 20, 30, 40, 50, 60, 70, 80, 90];Gestion
+11-14];Affaires, finance et administration
+21-22];Sciences naturelles et appliquées
+31-33];Santé
+41-45];Enseignement, droit et services sociaux
+51-55];Arts, culture et sports
+62-65];Vente et services
+72-75];Métiers, transport et machinerie
+82-85];Ressources naturelles et agriculture
+92-95];Fabrication et utilités publiques
+00-95];Total (toutes professions)
+](delimiter is ';');
 
-// ---- Correspondance 2 premiers chiffres de la CNP des EIMT -> grand groupe ---
+// EIMT : deux premiers chiffres du code CNP -> grand groupe de professions
 Map_GroupeCNP2:
 MAPPING LOAD * INLINE [
-Code2|Groupe
-00|Gestion
-10|Gestion
-20|Gestion
-30|Gestion
-40|Gestion
-50|Gestion
-60|Gestion
-70|Gestion
-80|Gestion
-90|Gestion
-11|Affaires, finance et administration
-12|Affaires, finance et administration
-13|Affaires, finance et administration
-14|Affaires, finance et administration
-21|Sciences naturelles et appliquées
-22|Sciences naturelles et appliquées
-31|Santé
-32|Santé
-33|Santé
-41|Enseignement, droit et services sociaux
-42|Enseignement, droit et services sociaux
-43|Enseignement, droit et services sociaux
-44|Enseignement, droit et services sociaux
-45|Enseignement, droit et services sociaux
-51|Arts, culture et sports
-52|Arts, culture et sports
-53|Arts, culture et sports
-54|Arts, culture et sports
-55|Arts, culture et sports
-62|Vente et services
-63|Vente et services
-64|Vente et services
-65|Vente et services
-72|Métiers, transport et machinerie
-73|Métiers, transport et machinerie
-74|Métiers, transport et machinerie
-75|Métiers, transport et machinerie
-82|Ressources naturelles et agriculture
-83|Ressources naturelles et agriculture
-84|Ressources naturelles et agriculture
-85|Ressources naturelles et agriculture
-92|Fabrication et utilités publiques
-93|Fabrication et utilités publiques
-94|Fabrication et utilités publiques
-95|Fabrication et utilités publiques
-] (delimiter is '|');
+Code2;Groupe
+00;Gestion
+10;Gestion
+20;Gestion
+30;Gestion
+40;Gestion
+50;Gestion
+60;Gestion
+70;Gestion
+80;Gestion
+90;Gestion
+11;Affaires, finance et administration
+12;Affaires, finance et administration
+13;Affaires, finance et administration
+14;Affaires, finance et administration
+21;Sciences naturelles et appliquées
+22;Sciences naturelles et appliquées
+31;Santé
+32;Santé
+33;Santé
+41;Enseignement, droit et services sociaux
+42;Enseignement, droit et services sociaux
+43;Enseignement, droit et services sociaux
+44;Enseignement, droit et services sociaux
+45;Enseignement, droit et services sociaux
+51;Arts, culture et sports
+52;Arts, culture et sports
+53;Arts, culture et sports
+54;Arts, culture et sports
+55;Arts, culture et sports
+62;Vente et services
+63;Vente et services
+64;Vente et services
+65;Vente et services
+72;Métiers, transport et machinerie
+73;Métiers, transport et machinerie
+74;Métiers, transport et machinerie
+75;Métiers, transport et machinerie
+82;Ressources naturelles et agriculture
+83;Ressources naturelles et agriculture
+84;Ressources naturelles et agriculture
+85;Ressources naturelles et agriculture
+92;Fabrication et utilités publiques
+93;Fabrication et utilités publiques
+94;Fabrication et utilités publiques
+95;Fabrication et utilités publiques
+](delimiter is ';');
 
 
-///$tab EPA
-// ---- Enquête sur la population active (fichier complet 1987-2025) -----------
-// Colonnes lues par POSITION (@n) : fonctionne que le fichier ait un en-tête ou
-// non (une ligne d'en-tête est éliminée par le WHERE car son année n'est pas
-// numérique).
-//  @1 année  @2 province  @4 indicateur  @5 profession [codes]  @6 genre
-//  @7 unité  @13 valeur   @14 statut (x = supprimé, .. = indisponible)
-// Filtres : période >= vAnneeMin, genre "Total", sans la ligne "Canada"
-// (on ne garde que les provinces : plus de doublon avec le Canada).
-Faits_EPA:
+// ===== SECTION EPA =====
+// Générer le LOAD avec l'assistant (comme dans le TP2), puis garder les champs
+// ci-dessous. Ici les colonnes sont lues par position (@n), sans en-tête :
+//  @1 année   @2 province   @4 indicateur   @5 profession [codes]   @6 genre
+//  @7 unité   @13 valeur    @14 statut (x = supprimé, .. = indisponible)
+// Si l'assistant donne des noms de champs (fichier avec en-tête), remplacer @n
+// par ces noms.
+// Filtres : depuis 2019, genre "Total", sans la ligne "Canada".
+EPA_brut:
 LOAD
-    Hash128(Text(Annee), Province, GroupeCNP) as %Cle,
+    Num(Left(@1, 4))                                             as Annee,
+    Trim(@2)                                                     as Province,
+    ApplyMap('Map_GroupeEPA', Mid(@5, Index(@5, '[') + 1), 'Autre') as GroupeCNP,
+    Trim(@4)                                                     as Indicateur,
+    Trim(@7)                                                     as Unite,
+    @13                                                          as Valeur,
+    Trim(@14)                                                    as Statut
+FROM [$(vLib)/population.csv]
+(txt, utf8, no labels, delimiter is ',', msq)
+WHERE Num(Left(@1, 4)) >= 2019
+  AND Trim(@6) = 'Total - Genre'
+  AND Trim(@2) <> 'Canada';
+
+
+// ===== SECTION EIMT =====
+// UN bloc LOAD par fichier trimestriel (comme "Générer les autres scripts" du TP2).
+// Copier-coller le bloc pour chaque fichier et changer 3 choses :
+// le nom du fichier, l'année et le trimestre. Qlik réunit automatiquement les
+// tables qui ont exactement les mêmes champs.
+// Champs Excel sans en-tête : A=province B=volet C=employeur D=adresse
+// E=profession F=statut juridique (non chargé) G=EIMT approuvées H=postes approuvés
+// 2 lignes d'en-tête ignorées (titre + noms de colonnes).
+EIMT_brut:
+LOAD
+    2025            as Annee,                    // <- année du fichier (voir son titre)
+    'T1'            as Trimestre,                // <- trimestre du fichier
+    2025 & '-T1'    as AnneeTrimestre,           // <- idem
+    A               as ProvinceBrute,
+    B               as VoletBrut,
+    C               as Employeur,
+    D               as Adresse,
+    E               as ProfessionBrute,
+    G               as EIMTApprouvees,
+    H               as PostesApprouves
+FROM [$(vLib)/tfwp_2026q1_pos_fr.xlsx]           // <- nom du fichier
+(ooxml, no labels, header is 2 lines, table is Sheet1)
+WHERE Len(Trim(B)) > 0;                          // exclut les lignes de notes du bas
+
+// ... copier le bloc ci-dessus pour les autres trimestres ...
+
+// Formats corrigés
+EIMT_propre:
+LOAD
+    Annee,
+    Trimestre,
+    AnneeTrimestre,
+    If(Left(Trim(ProvinceBrute), 3) = 'Les',
+       'Hors Canada (siège social)',
+       ApplyMap('Map_Province', Trim(ProvinceBrute), Trim(ProvinceBrute)))  as Province,
+    ApplyMap('Map_GroupeCNP2', Left(Trim(ProfessionBrute), 2), 'Autre')     as GroupeCNP,
+    ApplyMap('Map_Volet', Trim(VoletBrut), Trim(VoletBrut))                 as Volet,
+    Trim(Employeur)                                                         as Employeur,
+    Trim(Adresse)                                                           as Adresse,
+    Left(Trim(ProfessionBrute), 5)                                          as CNP5,
+    Mid(Trim(ProfessionBrute), 7)                                           as Profession,
+    EIMTApprouvees,
+    PostesApprouves
+RESIDENT EIMT_brut;
+
+DROP TABLE EIMT_brut;
+
+
+// ===== SECTION Modèle =====
+// Table de liens : une seule relation entre les deux tables de faits (Hash128,
+// comme pour OrderID + LineNo dans le TP2). Pas de clé synthétique.
+Lien_tmp:
+LOAD Annee, Province, GroupeCNP RESIDENT EPA_brut WHERE GroupeCNP <> 'Autre';
+
+Concatenate (Lien_tmp)
+LOAD Annee, Province, GroupeCNP RESIDENT EIMT_propre;
+
+Lien:
+LOAD DISTINCT
+    Hash128(Annee, Province, GroupeCNP) as %Cle,
     Annee,
     Province,
-    GroupeCNP,
+    GroupeCNP
+RESIDENT Lien_tmp;
+
+DROP TABLE Lien_tmp;
+
+// Faits EPA : la ligne est conservée même si la valeur est absente
+Faits_EPA:
+LOAD
+    Hash128(Annee, Province, GroupeCNP) as %Cle,
     Indicateur,
     Unite,
     Valeur,
     Statut,
-    If(IsNull(Valeur), 0, 1)                   as Disponible
-WHERE Len(GroupeCNP) > 0;                      // un seul niveau : les grands groupes
+    If(IsNull(Valeur) OR Len(Trim(Valeur)) = 0, 0, 1) as Disponible
+RESIDENT EPA_brut
+WHERE GroupeCNP <> 'Autre';
+
+Faits_EIMT:
 LOAD
-    Num#(Left(@1, 4))                          as Annee,
-    Trim(@2)                                   as Province,
-    ApplyMap('Map_GroupeEPA', TextBetween(@5, '[', ']'), Null()) as GroupeCNP,
-    Trim(@4)                                   as Indicateur,
-    Trim(@7)                                   as Unite,
-    Num#(Replace(Text(@13), ',', '.'), '0.0', '.') as Valeur,   // vide reste NULL
-    Trim(@14)                                  as Statut
-FROM [$(vLib)/$(vFichierEPA)]
-(txt, utf8, no labels, delimiter is '$(vSepEPA)', msq)
-WHERE Num#(Left(@1, 4)) >= $(vAnneeMin)
-  AND Trim(@6) = 'Total - Genre'
-  AND Trim(@2) <> 'Canada';
+    Hash128(Annee, Province, GroupeCNP) as %Cle,
+    Trimestre,
+    AnneeTrimestre,
+    Volet,
+    Employeur,
+    Adresse,
+    CNP5,
+    Profession,
+    EIMTApprouvees,
+    PostesApprouves
+RESIDENT EIMT_propre;
 
-// Dernière année disponible dans l'EPA (utilisée dans les ratios)
-MaxEPA_tmp:
-LOAD Max(Annee) as AnneeMaxEPA RESIDENT Faits_EPA;
-LET vAnneeMaxEPA = Peek('AnneeMaxEPA', 0, 'MaxEPA_tmp');
-DROP TABLE MaxEPA_tmp;
+DROP TABLE EPA_brut;
+DROP TABLE EIMT_propre;
 
-
-///$tab EIMT
-// ---- EIMT positives : un fichier par trimestre ------------------------------
-// Période lue dans le TITRE de chaque fichier ("... janvier a mars 2025").
-// Le fichier T1 fourni s'appelle ...2026q1... mais son titre dit 2025 : la
-// table Controle_Fichiers permet de voir l'écart pour chaque fichier.
-// Champs Excel sans en-tête : A=province B=volet C=employeur D=adresse
-// E=profession F=statut juridique (non chargé : "Inconnu" à 81 %)
-// G=EIMT approuvées H=postes approuvés.
-FOR EACH vFichier IN FileList('$(vLib)/$(vFichiersEIMT)')
-
-    Titre_tmp:
-    LOAD
-        WildMatch(A, '*janvier*', '*avril*', '*juillet*', '*octobre*') as IdxTrim,
-        Num#(Right(Trim(A), 4))                                        as AnneeTitre
-    FROM [$(vFichier)]
-    (ooxml, no labels, table is Sheet1)
-    WHERE RecNo() = 1;
-
-    LET vIdxTrim    = Peek('IdxTrim', 0, 'Titre_tmp');
-    LET vAnneeTitre = Peek('AnneeTitre', 0, 'Titre_tmp');
-    DROP TABLE Titre_tmp;
-
-    Controle_Fichiers:
-    LOAD
-        SubField('$(vFichier)', '/', -1)                                         as CtrlFichier,
-        $(vAnneeTitre)                                                           as CtrlAnneeTitre,
-        'T' & $(vIdxTrim)                                                        as CtrlTrimTitre,
-        Num#(Left(SubField(SubField('$(vFichier)', '/', -1), '_', 2), 4))        as CtrlAnneeNom,
-        Upper(Right(SubField(SubField('$(vFichier)', '/', -1), '_', 2), 2))      as CtrlTrimNom
-    AutoGenerate 1;
-
-    Faits_EIMT:
-    LOAD
-        Hash128(Text(Annee), Province, GroupeCNP) as %Cle,
-        *;
-    LOAD
-        $(vAnneeTitre)                                   as Annee,
-        'T' & $(vIdxTrim)                                as Trimestre,
-        $(vAnneeTitre) & '-T' & $(vIdxTrim)              as AnneeTrimestre,
-        // Les accents sont perdus dans le fichier source ("Qu bec") : '?' = 1 caractère
-        Pick(WildMatch(Trim(A), 'Terre-Neuve*', '*Prince*', 'Nouvelle-?cosse', 'Nouveau-Brunswick',
-                       'Qu?bec', 'Ontario', 'Manitoba', 'Saskatchewan', 'Alberta',
-                       'Colombie-Britannique', 'Yukon', 'Territoires*', 'Les employeurs*'),
-             'Terre-Neuve-et-Labrador', 'Île-du-Prince-Édouard', 'Nouvelle-Écosse', 'Nouveau-Brunswick',
-             'Québec', 'Ontario', 'Manitoba', 'Saskatchewan', 'Alberta',
-             'Colombie-Britannique', 'Yukon', 'Territoires du Nord-Ouest', 'Hors Canada (siège social)') as Province,
-        ApplyMap('Map_GroupeCNP2', Left(Trim(E), 2), Null())  as GroupeCNP,
-        Pick(WildMatch(Trim(B), 'Agriculture*', 'Bas*', 'Haut*', 'R?sident*', 'Talent*'),
-             'Agriculture primaire', 'Bas salaire', 'Haut salaire',
-             'Résident permanent seulement', 'Talent mondial')  as Volet,
-        Trim(C)                                          as Employeur,
-        Trim(D)                                          as Adresse,
-        Left(Trim(E), 5)                                 as CNP5,
-        Trim(Mid(Trim(E), 7))                            as Profession,
-        Num(G)                                           as EIMTApprouvees,
-        Num(H)                                           as PostesApprouves
-    FROM [$(vFichier)]
-    (ooxml, no labels, header is 2 lines, table is Sheet1)
-    WHERE Len(Trim(B)) > 0;                              // exclut les lignes de notes en bas de fichier
-
-NEXT vFichier
-
-
-///$tab Modèle
-// ---- Table de liens (clé composite Hash128) : une seule relation entre
-//      les deux tables de faits, pas de clé synthétique ------------------------
-Lien_tmp:
-LOAD %Cle, Annee, Province, GroupeCNP RESIDENT Faits_EPA;
-Concatenate (Lien_tmp)
-LOAD %Cle, Annee, Province, GroupeCNP RESIDENT Faits_EIMT;
-
-Lien:
-LOAD DISTINCT * RESIDENT Lien_tmp;
-DROP TABLE Lien_tmp;
-
-// Les champs de liaison ne restent que dans la table Lien
-DROP FIELDS Annee, Province, GroupeCNP FROM Faits_EPA, Faits_EIMT;
-
-// ---- Dimension des grands groupes de professions -----------------------------
+// Dimension des grands groupes de professions
 Groupes:
 LOAD DISTINCT GroupeCNP RESIDENT Lien;
