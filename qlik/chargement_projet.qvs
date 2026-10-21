@@ -1,25 +1,24 @@
-SET vLib = 'lib://BUT3/Projet';
-
 Provinces:
 LOAD
     code as CodeProvince,
     libelle as Province,
     type as TypeProvince,
     capitale as Capitale
-FROM [$(vLib)/provinces.csv]
+FROM [lib://DataFiles/provinces.csv]
 (txt, utf8, embedded labels, delimiter is ';', msq);
 
 EPA:
 LOAD
-    @1 as Annee,
-    @2 as Province,
-    @4 as Indicateur,
-    @5 as Profession,
-    @6 as Genre,
-    @13 as Valeur,
-    @14 as Statut
-FROM [$(vLib)/population.csv]
-(txt, utf8, no labels, delimiter is ',', msq);
+    [PÉRIODE DE RÉFÉRENCE] as Annee,
+    [GÉO] as Province,
+    [Caractéristiques de la population active] as Indicateur,
+    [Classification nationale des professions (CNP)] as Profession,
+    Genre,
+    [UNITÉ DE MESURE] as Unite,
+    VALEUR as Valeur,
+    STATUS as Statut
+FROM [lib://DataFiles/population.csv]
+(txt, utf8, embedded labels, delimiter is ';', msq);
 
 EIMT:
 LOAD
@@ -30,5 +29,5 @@ LOAD
     E as ProfessionBrute,
     G as EIMTApprouvees,
     H as PostesApprouves
-FROM [$(vLib)/tfwp_2026q1_pos_fr.xlsx]
-(ooxml, no labels, header is 2 lines, table is Sheet1);
+FROM [lib://DataFiles/tfwp_2025q1_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is Positive);
