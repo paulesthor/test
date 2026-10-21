@@ -7,7 +7,7 @@ LOAD
 FROM [lib://DataFiles/provinces.csv]
 (txt, utf8, embedded labels, delimiter is ';', msq);
 
-EPA:
+Faits:
 LOAD
     [PÉRIODE DE RÉFÉRENCE] as Annee,
     [GÉO] as Province,
@@ -284,3 +284,48 @@ LOAD
     F as PostesApprouves
 FROM [lib://DataFiles/tfwp_2021q3_pos_fr.xlsx]
 (ooxml, no labels, header is 2 lines, table is Positive_FR);
+
+Map_Province:
+MAPPING LOAD * INLINE [
+Brut;Propre
+Alberta;Alberta
+Colombie-Britannique;Colombie-Britannique
+Île-du-Prince-Édouard;Île-du-Prince-Édouard
+le-du-Prince- douard;Île-du-Prince-Édouard
+Manitoba;Manitoba
+Nouveau-Brunswick;Nouveau-Brunswick
+Nouvelle-Écosse;Nouvelle-Écosse
+Nouvelle- cosse;Nouvelle-Écosse
+Nunavut;Nunavut
+Ontario;Ontario
+Québec;Québec
+Qu bec;Québec
+Saskatchewan;Saskatchewan
+Terre-Neuve-et-Labrador;Terre-Neuve-et-Labrador
+Territoires-du-Nord-Ouest;Territoires du Nord-Ouest
+Territoires du Nord-Ouest;Territoires du Nord-Ouest
+Yukon;Yukon
+](delimiter is ';');
+
+Map_Volet:
+MAPPING LOAD * INLINE [
+Brut;Propre
+R sident Permanent seulement;Résident permanent seulement
+Résident Permanent seulement;Résident permanent seulement
+](delimiter is ';');
+
+Concatenate (Faits)
+LOAD
+    Annee,
+    Trimestre,
+    If(Left(ProvinceBrute, 3) = 'Les', 'Hors Canada (siège social)',
+       ApplyMap('Map_Province', ProvinceBrute, 'Hors liste')) as Province,
+    ApplyMap('Map_Volet', Volet, Volet) as Volet,
+    Employeur,
+    Adresse,
+    ProfessionBrute,
+    EIMTApprouvees,
+    PostesApprouves
+RESIDENT EIMT;
+
+DROP TABLE EIMT;
