@@ -1,0 +1,103 @@
+Provinces:
+LOAD
+    code as CodeProvince,
+    libelle as Province,
+    type as TypeProvince,
+    capitale as Capitale
+FROM [lib://DataFiles/provinces.csv]
+(txt, utf8, embedded labels, delimiter is ';', msq);
+
+Faits:
+LOAD
+    [PÉRIODE DE RÉFÉRENCE] as Annee,
+    [GÉO] as Province,
+    [Caractéristiques de la population active] as Indicateur,
+    [Classification nationale des professions (CNP)] as Profession,
+    Genre,
+    [UNITÉ DE MESURE] as Unite,
+    VALEUR as Valeur,
+    STATUS as Statut
+FROM [lib://DataFiles/population.csv]
+(txt, utf8, embedded labels, delimiter is ';', msq);
+
+FOR EACH vFichier IN
+    'tfwp_2021q4_pos_fr', 'tfwp_2022q1_pos_fr', 'tfwp_2022q2_pos_fr',
+    'tfwp_2022q3_pos_fr', 'tfwp_2022q4_pos_fr', 'tfwp_2023q1_pos_fr',
+    'tfwp_2023q2_pos_fr', 'tfwp_2023q3_pos_fr', 'tfwp_2023q4_pos_fr',
+    'tfwp_2024q1_pos_fr', 'tfwp_2024q2_pos_fr', 'tfwp_2024q3_pos_fr',
+    'tfwp_2024q4_pos_fr', 'tfwp_2025q1_pos_fr', 'tfwp_2025q2_pos_fr',
+    'tfwp_2025q3_pos_fr', 'tfwp_2025q4_pos_fr', 'tfwp_2026q1_pos_fr'
+
+    EIMT:
+    LOAD
+        Num(Mid('$(vFichier)', 6, 4)) as Annee,
+        'T' & Mid('$(vFichier)', 11, 1) as Trimestre,
+        A as ProvinceBrute,
+        B as Volet,
+        C as Employeur,
+        D as Adresse,
+        E as ProfessionBrute,
+        G as EIMTApprouvees,
+        H as PostesApprouves
+    FROM [lib://DataFiles/$(vFichier).xlsx]
+    (ooxml, no labels, header is 2 lines, table is @1);
+
+NEXT vFichier
+
+Concatenate (EIMT)
+LOAD
+    2021 as Annee,
+    'T3' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    F as PostesApprouves
+FROM [lib://DataFiles/tfwp_2021q3_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is Positive_FR);
+
+Map_Province:
+MAPPING LOAD * INLINE [
+Brut;Propre
+Alberta;Alberta
+Colombie-Britannique;Colombie-Britannique
+Île-du-Prince-Édouard;Île-du-Prince-Édouard
+le-du-Prince- douard;Île-du-Prince-Édouard
+Manitoba;Manitoba
+Nouveau-Brunswick;Nouveau-Brunswick
+Nouvelle-Écosse;Nouvelle-Écosse
+Nouvelle- cosse;Nouvelle-Écosse
+Nunavut;Nunavut
+Ontario;Ontario
+Québec;Québec
+Qu bec;Québec
+Saskatchewan;Saskatchewan
+Terre-Neuve-et-Labrador;Terre-Neuve-et-Labrador
+Territoires-du-Nord-Ouest;Territoires du Nord-Ouest
+Territoires du Nord-Ouest;Territoires du Nord-Ouest
+Yukon;Yukon
+](delimiter is ';');
+
+Map_Volet:
+MAPPING LOAD * INLINE [
+Brut;Propre
+R sident Permanent seulement;Résident permanent seulement
+Résident Permanent seulement;Résident permanent seulement
+](delimiter is ';');
+
+Concatenate (Faits)
+LOAD
+    Annee,
+    Trimestre,
+    If(Left(ProvinceBrute, 3) = 'Les', 'Hors Canada (siège social)',
+       ApplyMap('Map_Province', ProvinceBrute, 'Hors liste')) as Province,
+    ApplyMap('Map_Volet', Volet, Volet) as Volet,
+    Employeur,
+    Adresse,
+    ProfessionBrute,
+    EIMTApprouvees,
+    PostesApprouves
+RESIDENT EIMT;
+
+DROP TABLE EIMT;

@@ -1,3 +1,4 @@
+///$tab Provinces
 Provinces:
 LOAD
     code as CodeProvince,
@@ -7,6 +8,7 @@ LOAD
 FROM [lib://DataFiles/provinces.csv]
 (txt, utf8, embedded labels, delimiter is ';', msq);
 
+///$tab EPA
 Faits:
 LOAD
     [PÉRIODE DE RÉFÉRENCE] as Annee,
@@ -20,29 +22,258 @@ LOAD
 FROM [lib://DataFiles/population.csv]
 (txt, utf8, embedded labels, delimiter is ';', msq);
 
-FOR EACH vFichier IN
-    'tfwp_2021q4_pos_fr', 'tfwp_2022q1_pos_fr', 'tfwp_2022q2_pos_fr',
-    'tfwp_2022q3_pos_fr', 'tfwp_2022q4_pos_fr', 'tfwp_2023q1_pos_fr',
-    'tfwp_2023q2_pos_fr', 'tfwp_2023q3_pos_fr', 'tfwp_2023q4_pos_fr',
-    'tfwp_2024q1_pos_fr', 'tfwp_2024q2_pos_fr', 'tfwp_2024q3_pos_fr',
-    'tfwp_2024q4_pos_fr', 'tfwp_2025q1_pos_fr', 'tfwp_2025q2_pos_fr',
-    'tfwp_2025q3_pos_fr', 'tfwp_2025q4_pos_fr', 'tfwp_2026q1_pos_fr'
+///$tab EIMT
+EIMT:
+LOAD
+    2021 as Annee,
+    'T4' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2021q4_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is Positive_FR);
 
-    EIMT:
-    LOAD
-        Num(Mid('$(vFichier)', 6, 4)) as Annee,
-        'T' & Mid('$(vFichier)', 11, 1) as Trimestre,
-        A as ProvinceBrute,
-        B as Volet,
-        C as Employeur,
-        D as Adresse,
-        E as ProfessionBrute,
-        G as EIMTApprouvees,
-        H as PostesApprouves
-    FROM [lib://DataFiles/$(vFichier).xlsx]
-    (ooxml, no labels, header is 2 lines, table is @1);
+EIMT:
+LOAD
+    2022 as Annee,
+    'T1' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2022q1_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is Positive_FR);
 
-NEXT vFichier
+EIMT:
+LOAD
+    2022 as Annee,
+    'T2' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2022q2_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is Positive_FR);
+
+EIMT:
+LOAD
+    2022 as Annee,
+    'T3' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2022q3_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is POSITIVE_FR);
+
+EIMT:
+LOAD
+    2022 as Annee,
+    'T4' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2022q4_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is [2022Q4_POS_FR]);
+
+EIMT:
+LOAD
+    2023 as Annee,
+    'T1' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2023q1_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is Positive_FR);
+
+EIMT:
+LOAD
+    2023 as Annee,
+    'T2' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2023q2_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is [Positive_FR ]);
+
+EIMT:
+LOAD
+    2023 as Annee,
+    'T3' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2023q3_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is [2023Q3_FR_POS]);
+
+EIMT:
+LOAD
+    2023 as Annee,
+    'T4' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2023q4_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is [2023_FR_POS]);
+
+EIMT:
+LOAD
+    2024 as Annee,
+    'T1' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2024q1_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is [2024_FR_POS]);
+
+EIMT:
+LOAD
+    2024 as Annee,
+    'T2' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2024q2_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is Sheet2);
+
+EIMT:
+LOAD
+    2024 as Annee,
+    'T3' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2024q3_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is Sheet1);
+
+EIMT:
+LOAD
+    2024 as Annee,
+    'T4' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2024q4_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is Sheet1);
+
+EIMT:
+LOAD
+    2025 as Annee,
+    'T1' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2025q1_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is Positive);
+
+EIMT:
+LOAD
+    2025 as Annee,
+    'T2' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2025q2_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is Positive);
+
+EIMT:
+LOAD
+    2025 as Annee,
+    'T3' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2025q3_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is Sheet1);
+
+EIMT:
+LOAD
+    2025 as Annee,
+    'T4' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2025q4_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is [2025Q4_POS_FR]);
+
+EIMT:
+LOAD
+    2026 as Annee,
+    'T1' as Trimestre,
+    A as ProvinceBrute,
+    B as Volet,
+    C as Employeur,
+    D as Adresse,
+    E as ProfessionBrute,
+    G as EIMTApprouvees,
+    H as PostesApprouves
+FROM [lib://DataFiles/tfwp_2026q1_pos_fr.xlsx]
+(ooxml, no labels, header is 2 lines, table is Sheet1);
 
 Concatenate (EIMT)
 LOAD
@@ -57,6 +288,7 @@ LOAD
 FROM [lib://DataFiles/tfwp_2021q3_pos_fr.xlsx]
 (ooxml, no labels, header is 2 lines, table is Positive_FR);
 
+///$tab Correspondances
 Map_Province:
 MAPPING LOAD * INLINE [
 Brut;Propre
@@ -86,6 +318,7 @@ R sident Permanent seulement;Résident permanent seulement
 Résident Permanent seulement;Résident permanent seulement
 ](delimiter is ';');
 
+///$tab Fusion
 Concatenate (Faits)
 LOAD
     Annee,
